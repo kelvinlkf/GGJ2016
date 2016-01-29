@@ -18,7 +18,8 @@ public class Timer : MonoBehaviour {
     {
         timer = timer.GetComponent<Text>();
         score = score.GetComponent<Text>();
-        timeCountdown = 5f;
+        timeCountdown = 5.0f;
+        currentTime = timeCountdown;
         scoreValue = 0;
     }
 	
@@ -26,19 +27,18 @@ public class Timer : MonoBehaviour {
         scored = false;
 	    if(!scored)
         {
-            timeCountdown -= Time.deltaTime;
-            currentTime = timeCountdown;
-            if(timeCountdown <= 0)
+            currentTime -= Time.deltaTime;
+            if(currentTime <= 0)
             {
-                timeCountdown = 5f;
-                scoreValue -= 5f;
+                currentTime = timeCountdown;
+                scoreValue -= 5.0f;
             }
         }
         if(Input.GetButtonDown("Fire1"))
         {
             Scoring();
         }
-        timer.text = "Remaining time : " + timeCountdown.ToString("f0");
+        timer.text = "Remaining time : " + currentTime.ToString("f0");
         score.text = "Score : " + scoreValue.ToString("f0");
 	}
 
@@ -46,6 +46,6 @@ public class Timer : MonoBehaviour {
     {
         scored = true;
         scoreValue += currentTime;
-        timeCountdown = 5f;
+        currentTime = timeCountdown;
     }
 }
