@@ -31,7 +31,14 @@ public class Timer : MonoBehaviour {
             if(currentTime <= 0)
             {
                 currentTime = timeCountdown;
-                scoreValue -= 5.0f;
+                if (scoreValue <= 0)
+                {
+                    scoreValue = 0;
+                }
+                else
+                {
+                    scoreValue -= 5.0f;
+                }
             }
         }
         if(Input.GetButtonDown("Fire1"))

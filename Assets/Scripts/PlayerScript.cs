@@ -36,7 +36,7 @@ public class PlayerScript : MonoBehaviour {
 	// Use this for initialization
 	void Start () 
     {
-        CenterHub = GameObject.FindGameObjectWithTag("Parent").GetComponent<Transform>();
+        CenterHub = GameObject.FindGameObjectWithTag("MainGlobe").GetComponent<Transform>();
         UpdateColor();
 	}
 	
