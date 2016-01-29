@@ -7,7 +7,6 @@ public struct HSBColor
     public float s;
     public float b;
     public float a;
-    public float wy;
 
     public HSBColor(float h, float s, float b, float a)
     {
