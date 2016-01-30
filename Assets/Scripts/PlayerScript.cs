@@ -119,4 +119,9 @@ public class PlayerScript : MonoBehaviour {
         }
     }
 
+    void WrongIndication()
+    {
+        
+    }
+
 }
