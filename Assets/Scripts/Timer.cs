@@ -56,10 +56,10 @@ public class Timer : MonoBehaviour {
         if (isPlaying)
         {
             scored = false;
-            if(!scored)
+            if (!scored)
             {
                 currentTime -= Time.deltaTime;
-                if(currentTime <= 0)
+                if (currentTime <= 0)
                 {
                     currentTime = timeCountdown;
                     if (playerScore <= 0)
@@ -72,11 +72,11 @@ public class Timer : MonoBehaviour {
                     }
                 }
 
-                if(Input.GetButtonDown("Fire1"))
+                if (Input.GetButtonDown("Fire1"))
                     Scoring(playerID);
             }
-            timer.text = "Remaining time : " + currentTime.ToString("f0");
-            score.text = "Score : " + playerScore.ToString("f0");
+            timer.text = "" + currentTime.ToString("f0");
+            score.text = "" + playerScore.ToString("f0");
         }
     }
 
