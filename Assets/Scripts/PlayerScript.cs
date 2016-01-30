@@ -3,7 +3,7 @@ using UnityEngine.Networking;
 using System.Collections;
 
 [RequireComponent (typeof (LineRenderer))]
-public class PlayerScript : MonoBehaviour {
+public class PlayerScript : NetworkBehaviour {
 
     private LineRenderer _lineRenderer;
     private SpringJoint _springJoint;
