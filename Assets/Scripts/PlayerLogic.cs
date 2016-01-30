@@ -10,33 +10,12 @@ public class PlayerLogic : NetworkBehaviour {
 	// 1 Round = when all players complete the number sequence
 	// 1 Turn = one turn of player's correct button press
 
-	public enum GameState {
-		None,
-		Init,
-		WaitingForPlayers,
-		WaitingForNextRound,
-		PlayingRound,
-		GameOver,
-		RestartRound
-	}
+	[SyncVar]
+	int playerScore = 100;
 
 	[SyncVar]
-	GameState gameState;
+	bool waitForNextRound = false;
 
-	[SyncVar]
-	int playerScore;
-
-	static int playerCount = 0;
-
-	float nextRoundCountdown = 0;
-	public float currentTime;
-	int currentTurn;
-	int currentRound;
-	int totalTurns;
-	int totalTurnPerPlayer;
-
-	public int currentPlayer;
-	List<NetworkInstanceId> playerIdQueue = new List<NetworkInstanceId>();
 	List<int> playerNumbers = new List<int>(); // player's numbers, e.g. [1,3,5,6,7]
 	List<int> availableIdArray = new List<int>();
 
@@ -44,7 +23,9 @@ public class PlayerLogic : NetworkBehaviour {
 
 	void Start ()
 	{
-		playerCount++;
+		Game.playerCount++;
+
+		Random.seed = 12;
 
 		if (GetComponent<NetworkIdentity>().isServer)
 	    {
@@ -54,12 +35,13 @@ public class PlayerLogic : NetworkBehaviour {
 	    else
 	    {
 			Debug.Log("Logged in as client");
+			CmdNewPlayerJoined();
 	    }
 	}
 
 	void OnDestroy ()
 	{
-		playerCount--;
+		Game.playerCount--;
 	}
 
 	void Update () 
@@ -67,40 +49,50 @@ public class PlayerLogic : NetworkBehaviour {
 		if (!isLocalPlayer)
             return;
 
-		if (playerCount < 2 && gameState != GameState.WaitingForPlayers)
+		if (Game.playerCount < 2 && Game.gameState != GameState.WaitingForPlayers)
 			SetGameState(GameState.WaitingForPlayers);
 
-		switch (gameState)
+		switch (Game.gameState)
 		{
 		case GameState.WaitingForPlayers:
 
-			if (playerCount > 1)
+			if (Game.playerCount > 1)
 				SetGameState(GameState.WaitingForNextRound);
 
 			break;
 
 		case GameState.WaitingForNextRound:
 
-			nextRoundCountdown -= Time.deltaTime;
+			Game.nextRoundCountdown -= Time.deltaTime;
 
-			if (nextRoundCountdown <= 0f)
+			if (Game.nextRoundCountdown <= 0f)
 				SetGameState(GameState.RestartRound);
 
 			break;
 
 		case GameState.PlayingRound:
 
-			Debug.Log("PlayingRound waiting for :" + currentTurn);
+			Debug.Log("PlayingRound waiting for :" + Game.currentTurn);
 
 			if (Input.GetButtonDown("Fire1"))
 			{
-				CmdPlayerPress(netId, playerNumbers[0]);
+				string str = "";
+				for (int i = 0; i < playerNumbers.Count; i++)
+					str += playerNumbers[i] + ", ";
+				Debug.Log(str);
+
+				Debug.Log("Send number : " + playerNumbers[0]);
+
+				if (isServer)
+					RpcPlayerPress(netId, playerNumbers[0]);
+				else
+					CmdPlayerPress(netId, playerNumbers[0]);
 			}
 
-			currentTime -= Time.deltaTime;
-	        if (currentTime <= 0)
+			Game.currentTime -= Time.deltaTime;
+			if (Game.currentTime <= 0)
 	        {
-	            currentTime = 5f;
+				Game.currentTime = 5f;
 	            if (playerScore <= 0)
 	            {
 	                playerScore = 0;
@@ -111,7 +103,7 @@ public class PlayerLogic : NetworkBehaviour {
 	            }
 	        }
 
-			HUD.instance.UpdateTimer(currentTime);
+			HUD.instance.UpdateTimer(Game.currentTime);
 			HUD.instance.UpdateScore(playerScore);
 
 			break;
@@ -122,17 +114,17 @@ public class PlayerLogic : NetworkBehaviour {
 	{
 		Debug.Log("SetGameState : " + newState);
 
-		gameState = newState;
+		Game.gameState = newState;
 
-	    switch (gameState)
+		switch (Game.gameState)
 	    {
 	    case GameState.Init:
 
 	    	// This is when the the first player (host) is created,
 	    	// so setup the server variables.
 
-	        currentTurn = 0;
-	        currentRound = 0;
+			Game.currentTurn = 0;
+			Game.currentRound = 0;
 	        SetGameState(GameState.WaitingForPlayers);
 
 	    	break;
@@ -153,52 +145,13 @@ public class PlayerLogic : NetworkBehaviour {
 	    	// wait for a while before starting next round
 
 	    	// TODO display the countdown to let everyone get ready
-			nextRoundCountdown = 2f;
+			Game.nextRoundCountdown = 2f;
 
 			break;
 
 		case GameState.RestartRound:
 
-			currentTurn = 0;
-			currentRound++;
-
-			// Set up total turn for each player count
-	        if (playerCount < 5)
-	            totalTurnPerPlayer = Random.Range(5, 10);
-	        else if (playerCount < 10)
-				totalTurnPerPlayer = Random.Range(3, 5);
-	        else if (playerCount >= 10)
-				totalTurnPerPlayer = Random.Range(2, 3);
-
-			GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
-			totalTurns = players.Length * totalTurnPerPlayer;
-
-			// Create numbers for every player
-			//! Assign available id to each player
-	        CreateAvailableId(totalTurns);
-
-			for (int i = 0; i < players.Length; i++)
-	        {
-	        	Debug.Log("===== Assigning for player : " + i);
-
-				players[i].GetComponent<PlayerLogic>().ClearNumbers();
-
-				for (int j = 0; j < totalTurnPerPlayer; j++)
-		        {
-					int number = j+(i*totalTurnPerPlayer);
-					players[i].GetComponent<PlayerLogic>().AddNumber(availableIdArray[number]);
-
-					Debug.Log("assigned number : " + i + " , " + availableIdArray[number]);
-		        }
-
-				Debug.Log(playerNumbers.ToString());
-		        Debug.Log("===== Done assigning : " + i);
-				
-
-				players[i].GetComponent<PlayerLogic>().SortNumbers();
-	        }
-
-			SetGameState(GameState.PlayingRound);
+			CmdDoRestartRound();
 
 			break;
 
@@ -206,13 +159,17 @@ public class PlayerLogic : NetworkBehaviour {
 
 	    	// Init variables before starting the round
 
-	    	currentTime = 5f;
+	    	Game.currentTime = 5f;
 
 			break;
 
 	    case GameState.GameOver:
 
-	    	// TODO
+			if (waitForNextRound)
+			{
+				waitForNextRound = false;
+				tag = "Player";
+			}
 
 			break;
 
@@ -222,8 +179,10 @@ public class PlayerLogic : NetworkBehaviour {
 	    }
 	}
 
-	void CreateAvailableId(int length)
+	void CreateAvailableId()
 	{
+		int length = Game.totalTurns;
+
 		availableIdArray = new List<int>();
 	    //! Assign 0 - length
 	    for (int i = 0; i < length; i++)
@@ -248,13 +207,13 @@ public class PlayerLogic : NetworkBehaviour {
 
 	public bool CheckNumber (int numberToCheck)
 	{
-		if (currentTurn == numberToCheck)
+		if (Game.currentTurn == numberToCheck)
 		{
 			// If correct number, move to next turn (reset turn)
-			currentTurn++;
-			currentTime = 5f;
+			Game.currentTurn++;
+			Game.currentTime = 5f;
 
-			if (currentTurn >= totalTurns)
+			if (Game.currentTurn >= Game.totalTurns)
 				SetGameState(GameState.GameOver);
 
 			return true;
@@ -289,42 +248,139 @@ public class PlayerLogic : NetworkBehaviour {
 
 
 	[Command]
+	void CmdDoRestartRound ()
+	{
+		Debug.Log("CmdDoRestartRound");
+		RpcDoRestartRound();
+	}
+
+	[ClientRpc]
+	void RpcDoRestartRound ()
+	{
+		Debug.Log("RpcDoRestartRound");
+
+		Game.currentTurn = 0;
+		Game.currentRound++;
+		int totalTurnPerPlayer = 0;
+
+		// Set up total turn for each player count
+        if (Game.playerCount < 5)
+            totalTurnPerPlayer = Random.Range(5, 10);
+		else if (Game.playerCount < 10)
+			totalTurnPerPlayer = Random.Range(3, 5);
+		else if (Game.playerCount >= 10)
+			totalTurnPerPlayer = Random.Range(2, 3);
+
+		GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+
+		Game.totalTurns = players.Length * totalTurnPerPlayer;
+
+		// Create numbers for every player
+		//! Assign available id to each player
+        CreateAvailableId();
+
+        /*string str = "";
+		for (int i = 0; i < availableIdArray.Count; i++)
+			str += availableIdArray[i] + ", ";
+		HUD.instance.SetScore(str);*/
+
+		for (int i = 0; i < players.Length; i++)
+        {
+        	Debug.Log("===== Assigning for player : " + i);
+
+			players[i].GetComponent<PlayerLogic>().ClearNumbers();
+
+			for (int j = 0; j < totalTurnPerPlayer; j++)
+	        {
+				int number = j+(i*totalTurnPerPlayer);
+				players[i].GetComponent<PlayerLogic>().AddNumber(availableIdArray[number]);
+
+				Debug.Log("assigned number : " + i + " , " + availableIdArray[number]);
+	        }
+
+			Debug.Log(playerNumbers.ToString());
+	        Debug.Log("===== Done assigning : " + i);
+			
+
+			players[i].GetComponent<PlayerLogic>().SortNumbers();
+        }
+
+		SetGameState(GameState.PlayingRound);
+	}
+
+	[Command]
 	void CmdPlayerPress (NetworkInstanceId nid, int number)
 	{
-		Debug.Log("CmdPlayerPress : " + currentTurn + " , " + number);
+		Debug.Log("=====1 " + isServer + " , " + isClient + " , " + isLocalPlayer);
+		Debug.Log("CmdPlayerPress");
+
+		RpcPlayerPress(nid, number);
+		PlayerPress(nid, number);
+	}
+
+	[ClientRpc]
+	void RpcPlayerPress (NetworkInstanceId nid, int number)
+	{
+		Debug.Log("RpcPlayerPress");
+		PlayerPress(nid, number);
+	}
+
+	void PlayerPress (NetworkInstanceId nid, int number)
+	{
+		Debug.Log("=====2 " + isServer + " , " + isClient + " , " + isLocalPlayer);
+		Debug.Log("PlayerPress : " + nid + " = turn " + Game.currentTurn + " , number " + number);
+
+		string str = "";
+		for (int i = 0; i < playerNumbers.Count; i++)
+			str += playerNumbers[i] + ", ";
+		Debug.Log(str);
 
 		if (isServer)
 		{
-			if (currentTurn == number)
+			if (Game.currentTurn == number)
 			{
+				int score = Mathf.FloorToInt(Game.currentTime);
 
-				int score = Mathf.FloorToInt(currentTime);
-				RpcCorrect(nid, score);
+				//if (netId == nid)
+				{
+					Debug.Log("PlayerPress right");
+					Game.currentTurn++;
+					Game.currentTime = 5f;
+					playerNumbers.RemoveAt(0);
+					AddScore(score);
+				}
+
 			}
 			else
 			{
-				RpcWrong(nid);
+				//if (netId == nid)
+				{
+					Debug.Log("PlayerPress wrong");
+					AddScore(-5);
+				}
 			}
 		}
 	}
 
-	[ClientRpc]
-	void RpcWrong (NetworkInstanceId nid)
+	[Command]
+	void CmdNewPlayerJoined ()
 	{
-		Debug.Log("RpcWrong");
-		if (netId == nid)
-		{
-			AddScore(-5);
-		}
+		RpcNewPlayerJoined();
 	}
 
 	[ClientRpc]
-	void RpcCorrect (NetworkInstanceId nid, int score)
+	void RpcNewPlayerJoined ()
 	{
-		Debug.Log("RpcCorrect");
-		if (netId == nid)
+		if (Game.gameState == GameState.WaitingForNextRound)
 		{
-			AddScore(score);
+			Game.nextRoundCountdown = 2f;
+		}
+		else if (Game.gameState == GameState.PlayingRound)
+		{
+			// Change tag to make sure that this player does
+			// not get listed during CmdDoRestartRound()
+			waitForNextRound = true;
+			tag = "PlayerInQueue";
 		}
 	}
 }

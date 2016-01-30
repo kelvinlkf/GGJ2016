@@ -14,6 +14,16 @@ public class HUD : MonoBehaviour
 	    score = score.GetComponent<Text>();
 	}
 
+	public void SetTimer (string val)
+	{
+		timer.text = val;
+	}
+
+	public void SetScore (string val)
+	{
+		score.text = val;
+	}
+
 	public void UpdateTimer (float val)
 	{
 		timer.text = "" + val.ToString("f0");

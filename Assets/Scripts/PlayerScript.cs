@@ -17,7 +17,7 @@ public class PlayerScript : NetworkBehaviour {
     private SphereCollider _parentsphereCollider;
 
     public float Hvalue;
-    private int mPlayerId;
+    //private int mPlayerId;
     public Vector3 posRange;
 
     void Awake()
@@ -74,12 +74,12 @@ public class PlayerScript : NetworkBehaviour {
 
     public void SetID(int _value)
     {
-        mPlayerId = _value;
+        //mPlayerId = _value;
     }
 
     public void UpdateColor()
     {
-        Vector3 direction = _parentObj.position - _transform.position;
+        //Vector3 direction = _parentObj.position - _transform.position;
         float angle = Vector3.Angle(Vector3.up, _transform.position);
         //Quaternion qua = Quaternion.Euler(new Vector3(0f,0f,direction));
         //float angle = Vector3.Angle(_parentObj.position, _transform.position);
@@ -87,38 +87,4 @@ public class PlayerScript : NetworkBehaviour {
         HSBColor newColor = new HSBColor(Mathf.Sin (angle + Mathf.PI / 2 ), 1f, 1f);
         _material.color = newColor.ToColor();
     }
-
-    void OnStartClient ()
-    {
-		Debug.Log("OnStartClient");
-    }
-
-	void OnServerConnect (NetworkConnection conn)
-    {
-		Debug.Log("OnServerConnect");
-    }
-
-	void OnServerDisconnect ()
-    {
-		Debug.Log("OnServerDisconnect");
-    }
-
-	void OnConnectedToServer ()
-    {
-		Debug.Log("OnConnectedToServer");
-    }
-
-	void OnPlayerConnected(NetworkPlayer player)
-	{
-		Debug.Log("Player connect");
-	}
-
-	void OnPlayerDisconnected(NetworkPlayer player)
-	{
-		Debug.Log("Player dc");
-
-		// Cleanup stuff, from http://docs.unity3d.com/ScriptReference/MonoBehaviour.OnPlayerDisconnected.html
-		Network.RemoveRPCs(player);
-        Network.DestroyPlayerObjects(player);
-	}
 }
