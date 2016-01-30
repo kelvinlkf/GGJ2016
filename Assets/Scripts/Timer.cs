@@ -7,6 +7,8 @@ public class Timer : MonoBehaviour {
 
     public Text timer;
     public Text score;
+    public Text round;
+    public Text currentNumber;
 
     bool isWaiting;
     bool isPlaying;
@@ -78,6 +80,9 @@ public class Timer : MonoBehaviour {
             }
             timer.text = "" + currentTime.ToString("f0");
             score.text = "" + playerScore.ToString("f0");
+            round.text = "" + currentRound.ToString("f0");
+            //TODO get player current number
+            //currentNumber.text = "" + currentRound.ToString("f0");
         }
     }
 

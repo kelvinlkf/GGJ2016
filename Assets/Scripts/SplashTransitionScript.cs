@@ -22,7 +22,7 @@ public class SplashTransitionScript : MonoBehaviour {
 
     void LoadGame()
     {
-        SceneManager.LoadScene(1);
+        SceneManager.LoadScene("model_scene_network");
     }
 	
 	// Update is called once per frame
