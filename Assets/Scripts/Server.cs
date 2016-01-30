@@ -23,6 +23,7 @@ public class Server : NetworkBehaviour {
 
 	public Text timer;
     public Text score;
+    public Text titleText;
 
 	[SyncVar]
 	GameState gameState;
@@ -54,7 +55,8 @@ public class Server : NetworkBehaviour {
 		if (GetComponent<NetworkIdentity>().isServer)
         {
 			Debug.Log("LOGGED IN AS SERVER");
-			SetGameState(GameState.Init);
+            titleText.color = new Color(0f, 0f, 0f, 0f);
+            SetGameState(GameState.Init);
         }
         else
         {
