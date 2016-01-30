@@ -81,6 +81,5 @@ public class PlayerScript : MonoBehaviour {
         //Debug.Log(angle);
         HSBColor newColor = new HSBColor(Mathf.Sin (angle + Mathf.PI / 2 ), 1f, 1f);
         _material.color = newColor.ToColor();
-        Debug.Log(_material.color.ToString());
     }
 }
