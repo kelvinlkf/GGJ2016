@@ -20,7 +20,8 @@ public class Timer : MonoBehaviour {
     int playerCount;
     int playerScore;
 
-    int[] idArray;
+    List<int> idArray;
+    List<int> availableIdArray;
 
     int playerID;
 
@@ -35,9 +36,9 @@ public class Timer : MonoBehaviour {
     {
         timer = timer.GetComponent<Text>();
         score = score.GetComponent<Text>();
+        idArray = new List<int>();
+        //!if is server
         WaitingGame();
-        AddPlayer();
-        AddPlayer();
     }
 	
 	void FixedUpdate () 
@@ -49,7 +50,7 @@ public class Timer : MonoBehaviour {
     {
         if (isWaiting)
         {
-            if (playerCount > 1)
+            //if (playerCount > 1)
                 StartGame();
         }
 
@@ -80,12 +81,17 @@ public class Timer : MonoBehaviour {
         }
     }
 
+    void SetGameState()
+    {
+        
+    }
+
     void WaitingGame()
     {
         isWaiting = true;
         currentTurn = 0;
         currentRound = 0;
-        playerCount = 0;
+        playerCount = 11;
         timeCountdown = 0.0f;
         isTurnEnd = false;
         isRoundEnd = false;
@@ -101,6 +107,7 @@ public class Timer : MonoBehaviour {
         isTurnEnd = false;
         isRoundEnd = false;
 
+        //! Set up total turn for each player count
         if (playerCount < 5)
             totalTurn = Random.Range(5, 10);
         else if (playerCount < 10)
@@ -108,8 +115,20 @@ public class Timer : MonoBehaviour {
         else if (playerCount >= 10)
             totalTurn = Random.Range(2, 3);
 
-        idArray = new int[totalTurn];
         totalRound = playerCount * totalTurn;
+        CreateAvailableId(totalRound);
+
+        /*
+        for (int i = 0; i < totalRound; i++)
+        {
+            Debug.Log(availableIdArray[i]);
+        }*/
+
+        //! Assign available id to each player
+        for (int i = 0; i < totalTurn; i++)
+        {
+            
+        }
     }
 
     void NextRound()
@@ -118,10 +137,34 @@ public class Timer : MonoBehaviour {
         currentTurn++;
         RoundEnd();
     }
-        
-    void SetId(int id)
+
+    void CreateAvailableId(int length)
     {
-        playerID = id;
+        availableIdArray = new List<int>();
+        //! Assign 0 - length
+        for (int i = 0; i < length; i++)
+        {
+            availableIdArray.Add(i);
+        }
+
+        //! Random swtich the index
+        for (int i = length-1; i > 0; i--)
+        {
+            // Randomize a number between 0 and i (so that the range decreases each time)
+            int rnd = Random.Range(0,i);
+
+            // Save the value of the current i, otherwise it'll overright when we swap the values
+            int temp = availableIdArray[i];
+
+            // Swap the new and old values
+            availableIdArray[i] = availableIdArray[rnd];
+            availableIdArray[rnd] = temp;
+        }
+    }
+
+    void AddID(int id)
+    {
+        idArray.Add(id);
     }
 
     void AddPlayer()
