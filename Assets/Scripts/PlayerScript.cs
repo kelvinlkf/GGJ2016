@@ -3,7 +3,7 @@ using UnityEngine.Networking;
 using System.Collections;
 
 [RequireComponent (typeof (LineRenderer))]
-public class PlayerScript : MonoBehaviour {
+public class PlayerScript : NetworkBehaviour {
 
     private LineRenderer _lineRenderer;
     private SpringJoint _springJoint;
@@ -33,6 +33,12 @@ public class PlayerScript : MonoBehaviour {
         _lineRenderer.SetVertexCount(2);
     }
 
+	[Command]
+    void CmdDoSomething ()
+    {
+    	Debug.Log("do something");
+    }
+
     void OnEnable()
     {
     }
@@ -42,6 +48,8 @@ public class PlayerScript : MonoBehaviour {
     {
         CenterHub = GameObject.FindGameObjectWithTag("MainGlobe").GetComponent<Transform>();
         UpdateColor();
+
+		CmdDoSomething();
 	}
 	
 	// Update is called once per frame
@@ -91,4 +99,38 @@ public class PlayerScript : MonoBehaviour {
         HSBColor newColor = new HSBColor(Mathf.Sin (angle + Mathf.PI / 2 ), 1f, 1f);
         _material.color = newColor.ToColor();
     }
+
+    void OnStartClient ()
+    {
+		Debug.Log("OnStartClient");
+    }
+
+	void OnServerConnect (NetworkConnection conn)
+    {
+		Debug.Log("OnServerConnect");
+    }
+
+	void OnServerDisconnect ()
+    {
+		Debug.Log("OnServerDisconnect");
+    }
+
+	void OnConnectedToServer ()
+    {
+		Debug.Log("OnConnectedToServer");
+    }
+
+	void OnPlayerConnected(NetworkPlayer player)
+	{
+		Debug.Log("Player connect");
+	}
+
+	void OnPlayerDisconnected(NetworkPlayer player)
+	{
+		Debug.Log("Player dc");
+
+		// Cleanup stuff, from http://docs.unity3d.com/ScriptReference/MonoBehaviour.OnPlayerDisconnected.html
+		Network.RemoveRPCs(player);
+        Network.DestroyPlayerObjects(player);
+	}
 }
