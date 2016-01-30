@@ -33,23 +33,11 @@ public class PlayerScript : NetworkBehaviour {
         _lineRenderer.SetVertexCount(2);
     }
 
-	[Command]
-    void CmdDoSomething ()
-    {
-    	Debug.Log("do something");
-    }
-
-    void OnEnable()
-    {
-    }
-
 	// Use this for initialization
 	void Start () 
     {
         CenterHub = GameObject.FindGameObjectWithTag("MainGlobe").GetComponent<Transform>();
         UpdateColor();
-
-		CmdDoSomething();
 	}
 	
 	// Update is called once per frame

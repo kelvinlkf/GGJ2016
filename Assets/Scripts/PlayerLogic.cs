@@ -1,16 +1,16 @@
 ﻿using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.Networking;
 using System.Collections;
 using System.Collections.Generic;
 
-[RequireComponent (typeof (LineRenderer))]
-public class PlayerLogic : NetworkBehaviour
-{
-	// GAME VARIABLES
+public class PlayerLogic : NetworkBehaviour {
 
-	public enum GameState
-	{
+	// This should only be handled by the host player.
+	// NOTE:
+	// 1 Round = when all players complete the number sequence
+	// 1 Turn = one turn of player's correct button press
+
+	public enum GameState {
 		None,
 		Init,
 		WaitingForPlayers,
@@ -20,13 +20,13 @@ public class PlayerLogic : NetworkBehaviour
 		RestartRound
 	}
 
-	public Text timer;
-	public Text score;
+	[SyncVar]
+	GameState gameState;
 
 	[SyncVar]
-	public GameState gameState;
-	[SyncVar]
 	int playerScore;
+
+	static int playerCount = 0;
 
 	float nextRoundCountdown = 0;
 	public float currentTime;
@@ -34,130 +34,85 @@ public class PlayerLogic : NetworkBehaviour
 	int currentRound;
 	int totalTurns;
 	int totalTurnPerPlayer;
-	public int playerCount;
 
 	public int currentPlayer;
 	List<NetworkInstanceId> playerIdQueue = new List<NetworkInstanceId>();
-
+	List<int> playerNumbers = new List<int>(); // player's numbers, e.g. [1,3,5,6,7]
 	List<int> availableIdArray = new List<int>();
 
 
 
-	// PLAYER VARIABLES
-
-	private LineRenderer _lineRenderer;
-	private SpringJoint _springJoint;
-	private MeshRenderer _meshRenderer;
-	private Material _material;
-	public Color mColor;
-
-	private Transform _transform;
-	private SphereCollider _sphereCollider;
-	private Transform _parentObj;
-	private SphereCollider _parentsphereCollider;
-
-	public float Hvalue;
-	private int mPlayerId;
-	public Vector3 posRange;
-
-
-
-
-
-	void Awake()
+	void Start ()
 	{
-		timer = timer.GetComponent<Text>();
-		score = score.GetComponent<Text>();
+		playerCount++;
 
-		_transform = GetComponent<Transform>();
-		SetPosition();
-		_sphereCollider = GetComponent<SphereCollider>();
-		_lineRenderer = GetComponent<LineRenderer>();
-		_springJoint = GetComponent<SpringJoint>();
-		_meshRenderer = GetComponent<MeshRenderer>();
-		_material = _meshRenderer.material;
-
-		_lineRenderer.SetVertexCount(2);
-	}
-
-	[Command]
-	void CmdDoSomething ()
-	{
-		Debug.Log("do something");
-	}
-
-	void OnEnable()
-	{
-	}
-
-	void Start () 
-	{
 		if (GetComponent<NetworkIdentity>().isServer)
-		{
+	    {
 			Debug.Log("LOGGED IN AS SERVER");
 			SetGameState(GameState.Init);
-		}
-		else
-		{
-			Debug.Log("Not logged in as server");
-		}
+	    }
+	    else
+	    {
+			Debug.Log("Logged in as client");
+	    }
+	}
 
-		CenterHub = GameObject.FindGameObjectWithTag("MainGlobe").GetComponent<Transform>();
-		UpdateColor();
-
-		CmdDoSomething();
+	void OnDestroy ()
+	{
+		playerCount--;
 	}
 
 	void Update () 
 	{
-		SetLine();
+		if (!isLocalPlayer)
+            return;
 
-		UpdateGame();
-	}
-
-	void UpdateGame ()
-	{
-		Debug.Log("Update : " + gameState);
-
-		if (playerCount < 2)
-		SetGameState(GameState.WaitingForPlayers);
+		if (playerCount < 2 && gameState != GameState.WaitingForPlayers)
+			SetGameState(GameState.WaitingForPlayers);
 
 		switch (gameState)
 		{
-			case GameState.WaitingForPlayers:
+		case GameState.WaitingForPlayers:
 
 			if (playerCount > 1)
-			SetGameState(GameState.WaitingForNextRound);
+				SetGameState(GameState.WaitingForNextRound);
 
 			break;
 
-			case GameState.WaitingForNextRound:
+		case GameState.WaitingForNextRound:
 
 			nextRoundCountdown -= Time.deltaTime;
 
 			if (nextRoundCountdown <= 0f)
-			SetGameState(GameState.RestartRound);
+				SetGameState(GameState.RestartRound);
 
 			break;
 
-			case GameState.PlayingRound:
+		case GameState.PlayingRound:
 
-			currentTime -= Time.deltaTime;
-			if (currentTime <= 0)
+			Debug.Log("PlayingRound waiting for :" + currentTurn);
+
+			if (Input.GetButtonDown("Fire1"))
 			{
-				currentTime = 5f;
-				if (playerScore <= 0)
-				{
-					playerScore = 0;
-				}
-				else
-				{
-					playerScore -= 5;
-				}
+				CmdPlayerPress(netId, playerNumbers[0]);
 			}
 
-			timer.text = "" + currentTime.ToString("f0");
-			score.text = "" + playerScore.ToString("f0");
+			currentTime -= Time.deltaTime;
+	        if (currentTime <= 0)
+	        {
+	            currentTime = 5f;
+	            if (playerScore <= 0)
+	            {
+	                playerScore = 0;
+	            }
+	            else
+	            {
+	                playerScore -= 5;
+	            }
+	        }
+
+			HUD.instance.UpdateTimer(currentTime);
+			HUD.instance.UpdateScore(playerScore);
 
 			break;
 		}
@@ -169,200 +124,207 @@ public class PlayerLogic : NetworkBehaviour
 
 		gameState = newState;
 
-		switch (gameState)
-		{
-			case GameState.Init:
+	    switch (gameState)
+	    {
+	    case GameState.Init:
 
-			// This is when the the first player (host) is created,
-			// so setup the server variables.
+	    	// This is when the the first player (host) is created,
+	    	// so setup the server variables.
+
+	        currentTurn = 0;
+	        currentRound = 0;
+	        SetGameState(GameState.WaitingForPlayers);
+
+	    	break;
+
+	    case GameState.WaitingForPlayers:
+
+	    	// This only happens when there's only one player,
+	    	// either on init or all other players left.
+
+	    	// In this state, the game doesn't start/countdown
+	    	// until another player joins.
+
+			break;
+
+	    case GameState.WaitingForNextRound:
+
+	    	// This is when there are enough players, and we
+	    	// wait for a while before starting next round
+
+	    	// TODO display the countdown to let everyone get ready
+			nextRoundCountdown = 2f;
+
+			break;
+
+		case GameState.RestartRound:
 
 			currentTurn = 0;
-			currentRound = 0;
-			SetGameState(GameState.WaitingForPlayers);
+			currentRound++;
 
-				break;
-
-			case GameState.WaitingForPlayers:
-
-				// This only happens when there's only one player,
-				// either on init or all other players left.
-
-				// In this state, the game doesn't start/countdown
-				// until another player joins.
-
-				break;
-
-			case GameState.WaitingForNextRound:
-
-				// This is when there are enough players, and we
-				// wait for a while before starting next round
-
-				// TODO display the countdown to let everyone get ready
-				nextRoundCountdown = 2f;
-
-				break;
-
-			case GameState.RestartRound:
-
-				currentTurn = 0;
-				currentRound++;
-
-				// Set up total turn for each player count
-				if (playerCount < 5)
-				totalTurnPerPlayer = Random.Range(5, 10);
-				else if (playerCount < 10)
+			// Set up total turn for each player count
+	        if (playerCount < 5)
+	            totalTurnPerPlayer = Random.Range(5, 10);
+	        else if (playerCount < 10)
 				totalTurnPerPlayer = Random.Range(3, 5);
-				else if (playerCount >= 10)
+	        else if (playerCount >= 10)
 				totalTurnPerPlayer = Random.Range(2, 3);
 
-				GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
-				totalTurns = playerCount * totalTurnPerPlayer;
+			GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+			totalTurns = players.Length * totalTurnPerPlayer;
 
-				CreateAvailableId(totalTurns);
+			// Create numbers for every player
+			//! Assign available id to each player
+	        CreateAvailableId(totalTurns);
 
-				//! Assign available id to each player
+			for (int i = 0; i < players.Length; i++)
+	        {
+	        	Debug.Log("===== Assigning for player : " + i);
 
-				Debug.Log("players : " + players.Length);
+				players[i].GetComponent<PlayerLogic>().ClearNumbers();
 
-				for (int i = 0; i < playerCount; i++)
-				{
-					players[i].GetComponent<PlayerScript>().ClearNumbers();
+				for (int j = 0; j < totalTurnPerPlayer; j++)
+		        {
+					int number = j+(i*totalTurnPerPlayer);
+					players[i].GetComponent<PlayerLogic>().AddNumber(availableIdArray[number]);
 
-					for (int j = 0; j < totalTurnPerPlayer; j++)
-					{
-						int number = j+(i*totalTurnPerPlayer);
-						players[i].GetComponent<PlayerScript>().AddNumber(availableIdArray[number]);
+					Debug.Log("assigned number : " + i + " , " + availableIdArray[number]);
+		        }
 
-						Debug.Log("assigned number : " + i + " , " + availableIdArray[number]);
-					}
+				Debug.Log(playerNumbers.ToString());
+		        Debug.Log("===== Done assigning : " + i);
+				
 
-					players[i].GetComponent<PlayerScript>().SortNumbers();
-				}
+				players[i].GetComponent<PlayerLogic>().SortNumbers();
+	        }
 
-				SetGameState(GameState.PlayingRound);
+			SetGameState(GameState.PlayingRound);
 
-				break;
+			break;
 
-			case GameState.PlayingRound:
+	    case GameState.PlayingRound:
 
-				// Init variables before starting the round
+	    	// Init variables before starting the round
 
-				currentTime = 5f;
+	    	currentTime = 5f;
 
-				break;
+			break;
 
-			case GameState.GameOver:
+	    case GameState.GameOver:
 
-				// TODO
+	    	// TODO
 
-				break;
+			break;
 
-			default:
-
-				Debug.Log("State not found : " + newState);
-
-				break;
-		}
+		default:
+			Debug.Log("State not found : " + newState);
+			break;
+	    }
 	}
 
 	void CreateAvailableId(int length)
 	{
 		availableIdArray = new List<int>();
-		//! Assign 0 - length
-		for (int i = 0; i < length; i++)
+	    //! Assign 0 - length
+	    for (int i = 0; i < length; i++)
+	    {
+	        availableIdArray.Add(i);
+	    }
+
+	    //! Random swtich the index
+	    for (int i = length-1; i > 0; i--)
+	    {
+	        // Randomize a number between 0 and i (so that the range decreases each time)
+	        int rnd = Random.Range(0,i);
+
+	        // Save the value of the current i, otherwise it'll overright when we swap the values
+	        int temp = availableIdArray[i];
+
+	        // Swap the new and old values
+	        availableIdArray[i] = availableIdArray[rnd];
+	        availableIdArray[rnd] = temp;
+	    }
+	}
+
+	public bool CheckNumber (int numberToCheck)
+	{
+		if (currentTurn == numberToCheck)
 		{
-			availableIdArray.Add(i);
-		}
+			// If correct number, move to next turn (reset turn)
+			currentTurn++;
+			currentTime = 5f;
 
-		//! Random swtich the index
-		for (int i = length-1; i > 0; i--)
+			if (currentTurn >= totalTurns)
+				SetGameState(GameState.GameOver);
+
+			return true;
+		}
+		else
+			return false;
+	}
+
+	public void ClearNumbers ()
+	{
+		playerNumbers.Clear();
+	}
+
+	public void AddNumber (int num)
+	{
+		playerNumbers.Add(num);
+	}
+
+	public void SortNumbers ()
+	{
+		Debug.Log("Sort : " + playerNumbers);
+		playerNumbers.Sort((int x, int y) => { return x.CompareTo(y); });
+	}
+
+	void AddScore(int score)
+	{
+		playerScore += score;
+		if (playerScore <= 0)
+			playerScore = 0;
+	}
+
+
+
+	[Command]
+	void CmdPlayerPress (NetworkInstanceId nid, int number)
+	{
+		Debug.Log("CmdPlayerPress : " + currentTurn + " , " + number);
+
+		if (isServer)
 		{
-			// Randomize a number between 0 and i (so that the range decreases each time)
-			int rnd = Random.Range(0,i);
+			if (currentTurn == number)
+			{
 
-			// Save the value of the current i, otherwise it'll overright when we swap the values
-			int temp = availableIdArray[i];
-
-			// Swap the new and old values
-			availableIdArray[i] = availableIdArray[rnd];
-			availableIdArray[rnd] = temp;
+				int score = Mathf.FloorToInt(currentTime);
+				RpcCorrect(nid, score);
+			}
+			else
+			{
+				RpcWrong(nid);
+			}
 		}
 	}
 
-	public Transform CenterHub
+	[ClientRpc]
+	void RpcWrong (NetworkInstanceId nid)
 	{
-		get
+		Debug.Log("RpcWrong");
+		if (netId == nid)
 		{
-			return _parentObj;
+			AddScore(-5);
 		}
-		set
+	}
+
+	[ClientRpc]
+	void RpcCorrect (NetworkInstanceId nid, int score)
+	{
+		Debug.Log("RpcCorrect");
+		if (netId == nid)
 		{
-			_parentObj = value;
-			_parentsphereCollider = _parentObj.GetComponent<SphereCollider>();
-			_springJoint.connectedBody = _parentObj.GetComponent<Rigidbody>();
+			AddScore(score);
 		}
-	}
-
-	public void SetPosition()
-	{
-		_transform.position = Random.insideUnitSphere * Random.Range(6f, 11f);
-	}
-
-	public void SetLine()
-	{
-		_lineRenderer.SetPosition(0, _transform.position + ((_parentObj.position - _transform.position).normalized *_sphereCollider.radius));
-		_lineRenderer.SetPosition(1, _parentObj.position + ((_transform.position - _parentObj.position).normalized * _parentsphereCollider.radius)* _parentObj.localScale.x);
-	}
-
-	public void SetID(int _value)
-	{
-		mPlayerId = _value;
-	}
-
-	public void UpdateColor()
-	{
-		Vector3 direction = _parentObj.position - _transform.position;
-		float angle = Vector3.Angle(Vector3.up, _transform.position);
-		//Quaternion qua = Quaternion.Euler(new Vector3(0f,0f,direction));
-		//float angle = Vector3.Angle(_parentObj.position, _transform.position);
-		//Debug.Log(angle);
-		HSBColor newColor = new HSBColor(Mathf.Sin (angle + Mathf.PI / 2 ), 1f, 1f);
-		_material.color = newColor.ToColor();
-	}
-
-
-
-	void OnStartClient ()
-	{
-		Debug.Log("OnStartClient");
-	}
-
-	void OnServerConnect (NetworkConnection conn)
-	{
-		Debug.Log("OnServerConnect");
-	}
-
-	void OnServerDisconnect ()
-	{
-		Debug.Log("OnServerDisconnect");
-	}
-
-	void OnConnectedToServer ()
-	{
-		Debug.Log("OnConnectedToServer");
-	}
-
-	void OnPlayerConnected(NetworkPlayer player)
-	{
-		Debug.Log("Player connect");
-	}
-
-	void OnPlayerDisconnected(NetworkPlayer player)
-	{
-		Debug.Log("Player dc");
-
-		// Cleanup stuff, from http://docs.unity3d.com/ScriptReference/MonoBehaviour.OnPlayerDisconnected.html
-		Network.RemoveRPCs(player);
-		Network.DestroyPlayerObjects(player);
 	}
 }
