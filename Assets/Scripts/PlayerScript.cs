@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Networking;
 using System.Collections;
 
 [RequireComponent (typeof (LineRenderer))]
@@ -16,10 +17,13 @@ public class PlayerScript : MonoBehaviour {
     private SphereCollider _parentsphereCollider;
 
     public float Hvalue;
+    private int mPlayerId;
+    public Vector3 posRange;
 
     void Awake()
     {
         _transform = GetComponent<Transform>();
+        SetPosition();
         _sphereCollider = GetComponent<SphereCollider>();
         _lineRenderer = GetComponent<LineRenderer>();
         _springJoint = GetComponent<SpringJoint>();
@@ -61,15 +65,20 @@ public class PlayerScript : MonoBehaviour {
         }
     }
 
+    public void SetPosition()
+    {
+        _transform.position = Random.insideUnitSphere * Random.Range(6f, 11f);
+    }
+
     public void SetLine()
     {
         _lineRenderer.SetPosition(0, _transform.position + ((_parentObj.position - _transform.position).normalized *_sphereCollider.radius));
-        _lineRenderer.SetPosition(1, _parentObj.position + ((_transform.position - _parentObj.position).normalized * _parentsphereCollider.radius));
+        _lineRenderer.SetPosition(1, _parentObj.position + ((_transform.position - _parentObj.position).normalized * _parentsphereCollider.radius)* _parentObj.localScale.x);
     }
 
-    public void SetColor()
+    public void SetID(int _value)
     {
-        
+        mPlayerId = _value;
     }
 
     public void UpdateColor()

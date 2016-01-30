@@ -15,8 +15,9 @@ public class SplashTransitionScript : MonoBehaviour {
         Sequence mySequence = DOTween.Sequence();
         // Add a movement tween at the beginning
         mySequence.Append(mWhiteOverlay.DOFade(0f, 1f))
-            .PrependInterval(2f)
-            .Append(mWhiteOverlay.DOFade(1f, 1f)).OnComplete(LoadGame);
+            .AppendInterval(3f)
+            .Append(mWhiteOverlay.DOFade(1f, 1f))
+            .Append(mWhiteOverlay.DOColor(Color.black, 1f)).OnComplete(LoadGame);
 	}
 
     void LoadGame()
