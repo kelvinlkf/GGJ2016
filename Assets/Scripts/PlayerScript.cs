@@ -131,7 +131,6 @@ public class PlayerScript : NetworkBehaviour {
     {
         
     }
-
     void OnStartClient ()
     {
 		Debug.Log("OnStartClient");

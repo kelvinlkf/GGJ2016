@@ -3,10 +3,8 @@ using System.Collections;
 
 public class GlobeRotation : MonoBehaviour {
 
-    float rotationSpeed = 15f;
+    float rotationSpeed = 45f;
     Vector3 directionUp = Vector3.up;
-    Vector3 directionRight = Vector3.right;
-    GameObject floatGlobe;
 
     void Awake()
     {
@@ -14,6 +12,5 @@ public class GlobeRotation : MonoBehaviour {
 
 	void FixedUpdate () {
         transform.Rotate(directionUp * rotationSpeed * Time.deltaTime);
-        transform.Rotate(directionRight * rotationSpeed * Time.deltaTime);
     }
 }
