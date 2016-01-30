@@ -45,8 +45,8 @@ public class Timer : MonoBehaviour {
         {
             Scoring();
         }
-        timer.text = "Remaining time : " + currentTime.ToString("f0");
-        score.text = "Score : " + scoreValue.ToString("f0");
+        timer.text = "" + currentTime.ToString("f0");
+        score.text = "" + scoreValue.ToString("f0");
 	}
 
     void Scoring()
