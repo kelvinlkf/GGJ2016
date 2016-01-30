@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.Networking;
+using DG.Tweening;
 using System.Collections;
 
 [RequireComponent (typeof (LineRenderer))]
@@ -16,9 +17,14 @@ public class PlayerScript : MonoBehaviour {
     private Transform _parentObj;
     private SphereCollider _parentsphereCollider;
 
-    public float Hvalue;
+    private bool inGame;
+
     private int mPlayerId;
-    public Vector3 posRange;
+    private float colorChangeTimer;
+    private float delayDuration;
+    public float minDelayDuration;
+    public float maxDelayDuration;
+    private bool isChangeColor;
 
     void Awake()
     {
@@ -35,11 +41,13 @@ public class PlayerScript : MonoBehaviour {
 
     void OnEnable()
     {
+        inGame = true;
     }
 
 	// Use this for initialization
 	void Start () 
     {
+        DOTween.Init();
         CenterHub = GameObject.FindGameObjectWithTag("MainGlobe").GetComponent<Transform>();
         UpdateColor();
 	}
@@ -48,6 +56,7 @@ public class PlayerScript : MonoBehaviour {
 	void Update () 
     {
         SetLine();
+        RandomChangeColor();
 	}
         
     //! Get, Set Parent
@@ -85,10 +94,29 @@ public class PlayerScript : MonoBehaviour {
     {
         Vector3 direction = _parentObj.position - _transform.position;
         float angle = Vector3.Angle(Vector3.up, _transform.position);
-        //Quaternion qua = Quaternion.Euler(new Vector3(0f,0f,direction));
-        //float angle = Vector3.Angle(_parentObj.position, _transform.position);
-        //Debug.Log(angle);
         HSBColor newColor = new HSBColor(Mathf.Sin (angle + Mathf.PI / 2 ), 1f, 1f);
         _material.color = newColor.ToColor();
     }
+
+    public void LerpColor()
+    {
+        HSBColor newColor = new HSBColor(Mathf.Sin (Random.Range(0f, 360f) + Mathf.PI / 2 ), 1f, 1f);
+        _material.DOColor(newColor.ToColor(), delayDuration);
+    }
+
+    void RandomChangeColor()
+    {
+        if (inGame)
+        {
+            colorChangeTimer += Time.deltaTime;
+            if (colorChangeTimer >= delayDuration)
+            {
+                delayDuration = Random.Range(minDelayDuration, maxDelayDuration);
+                LerpColor();
+                colorChangeTimer = 0f;
+            }
+
+        }
+    }
+
 }
