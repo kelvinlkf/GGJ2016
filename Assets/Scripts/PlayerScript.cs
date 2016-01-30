@@ -131,4 +131,37 @@ public class PlayerScript : NetworkBehaviour {
     {
         
     }
+    void OnStartClient ()
+    {
+		Debug.Log("OnStartClient");
+    }
+
+	void OnServerConnect (NetworkConnection conn)
+    {
+		Debug.Log("OnServerConnect");
+    }
+
+	void OnServerDisconnect ()
+    {
+		Debug.Log("OnServerDisconnect");
+    }
+
+	void OnConnectedToServer ()
+    {
+		Debug.Log("OnConnectedToServer");
+    }
+
+	void OnPlayerConnected(NetworkPlayer player)
+	{
+		Debug.Log("Player connect");
+	}
+
+	void OnPlayerDisconnected(NetworkPlayer player)
+	{
+		Debug.Log("Player dc");
+
+		// Cleanup stuff, from http://docs.unity3d.com/ScriptReference/MonoBehaviour.OnPlayerDisconnected.html
+		Network.RemoveRPCs(player);
+        Network.DestroyPlayerObjects(player);
+	}
 }
