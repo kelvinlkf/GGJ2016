@@ -315,7 +315,6 @@ public class PlayerLogic : NetworkBehaviour {
 		Debug.Log("CmdPlayerPress");
 
 		RpcPlayerPress(nid, number);
-		PlayerPress(nid, number);
 	}
 
 	[ClientRpc]
