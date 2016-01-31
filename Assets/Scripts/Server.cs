@@ -21,9 +21,12 @@ public class Server : NetworkBehaviour {
 		RestartRound
 	}
 
-	public Text timer;
+    public AudioClip rightChoice;
+    public AudioClip wrongChoice;
+    public Text timer;
     public Text score;
     public Text titleText;
+    public AudioSource audioSource;
 
 	[SyncVar]
 	GameState gameState;
@@ -79,10 +82,10 @@ public class Server : NetworkBehaviour {
 
 		case GameState.PlayingRound:
 
-			if (Input.GetButtonDown("Fire1"))
-				CmdPressButton(netId, playerNumbers[0]);
-
-			timer.text = "" + currentTime.ToString("f0");
+                if (Input.GetButtonDown("Fire1"))
+                    CmdPressButton(netId, playerNumbers[0]);
+                
+            timer.text = "" + currentTime.ToString("f0");
         	score.text = "" + playerScore.ToString("f0");
 
 			break;
