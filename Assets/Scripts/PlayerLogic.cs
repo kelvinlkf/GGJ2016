@@ -20,7 +20,6 @@ public class PlayerLogic : NetworkBehaviour {
 	List<int> availableIdArray = new List<int>();
 
 
-
 	void Start ()
 	{
 		Game.playerCount++;
