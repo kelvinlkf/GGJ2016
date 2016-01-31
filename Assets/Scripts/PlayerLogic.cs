@@ -24,7 +24,7 @@ public class PlayerLogic : NetworkBehaviour {
 	void Start ()
 	{
 		Game.playerCount++;
-
+        HUD.instance.hideTitle();
 		Random.seed = 12;
 
 		if (isServer)

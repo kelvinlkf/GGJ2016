@@ -8,6 +8,7 @@ public class HUD : MonoBehaviour
 	public Text score;
     public Text round;
     public Text currentNumber;
+    public Text gameTitle;
 
 	void Awake()
 	{
@@ -44,5 +45,9 @@ public class HUD : MonoBehaviour
     public void UpdateCurrentNumber (float val)
     {
         currentNumber.text = "" + val.ToString("f0");
+    }
+    public void hideTitle()
+    {
+        gameTitle.color = new Color(0f, 0f, 0f, 0f);
     }
 }
