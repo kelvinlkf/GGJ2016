@@ -6,6 +6,7 @@ using System.Collections;
 [RequireComponent (typeof (LineRenderer))]
 public class PlayerScript : NetworkBehaviour {
 
+    private PlayerLogic _playerlogic;
     private LineRenderer _lineRenderer;
     private SpringJoint _springJoint;
     private MeshRenderer _meshRenderer;
@@ -17,8 +18,6 @@ public class PlayerScript : NetworkBehaviour {
     private Transform _parentObj;
     private SphereCollider _parentsphereCollider;
 
-    private bool inGame;
-
     private int mPlayerId;
     private float colorChangeTimer;
     private float delayDuration;
@@ -26,8 +25,14 @@ public class PlayerScript : NetworkBehaviour {
     public float maxDelayDuration;
     private bool isChangeColor;
 
+    public float Hvalue;
+    //private int mPlayerId;
+    public Vector3 posRange;
+
+
     void Awake()
     {
+        _playerlogic = GetComponent<PlayerLogic>();
         _transform = GetComponent<Transform>();
         SetPosition();
         _sphereCollider = GetComponent<SphereCollider>();
@@ -38,26 +43,13 @@ public class PlayerScript : NetworkBehaviour {
 
         _lineRenderer.SetVertexCount(2);
     }
-
-	[Command]
-    void CmdDoSomething ()
-    {
-    	Debug.Log("do something");
-    }
-
-    void OnEnable()
-    {
-        inGame = true;
-    }
-
+        
 	// Use this for initialization
 	void Start () 
     {
         DOTween.Init();
         CenterHub = GameObject.FindGameObjectWithTag("MainGlobe").GetComponent<Transform>();
         UpdateColor();
-
-		CmdDoSomething();
 	}
 	
 	// Update is called once per frame
@@ -95,12 +87,12 @@ public class PlayerScript : NetworkBehaviour {
 
     public void SetID(int _value)
     {
-        mPlayerId = _value;
+        //mPlayerId = _value;
     }
 
     public void UpdateColor()
     {
-        Vector3 direction = _parentObj.position - _transform.position;
+        //Vector3 direction = _parentObj.position - _transform.position;
         float angle = Vector3.Angle(Vector3.up, _transform.position);
         HSBColor newColor = new HSBColor(Mathf.Sin (angle + Mathf.PI / 2 ), 1f, 1f);
         _material.color = newColor.ToColor();
@@ -114,7 +106,7 @@ public class PlayerScript : NetworkBehaviour {
 
     void RandomChangeColor()
     {
-        if (inGame)
+        if (_playerlogic.GetWaitNextRound())
         {
             colorChangeTimer += Time.deltaTime;
             if (colorChangeTimer >= delayDuration)
@@ -125,43 +117,9 @@ public class PlayerScript : NetworkBehaviour {
             }
 
         }
+        else
+        {
+            _material.DOColor(Color.gray, 1f);
+        }
     }
-
-    void WrongIndication()
-    {
-        
-    }
-    void OnStartClient ()
-    {
-		Debug.Log("OnStartClient");
-    }
-
-	void OnServerConnect (NetworkConnection conn)
-    {
-		Debug.Log("OnServerConnect");
-    }
-
-	void OnServerDisconnect ()
-    {
-		Debug.Log("OnServerDisconnect");
-    }
-
-	void OnConnectedToServer ()
-    {
-		Debug.Log("OnConnectedToServer");
-    }
-
-	void OnPlayerConnected(NetworkPlayer player)
-	{
-		Debug.Log("Player connect");
-	}
-
-	void OnPlayerDisconnected(NetworkPlayer player)
-	{
-		Debug.Log("Player dc");
-
-		// Cleanup stuff, from http://docs.unity3d.com/ScriptReference/MonoBehaviour.OnPlayerDisconnected.html
-		Network.RemoveRPCs(player);
-        Network.DestroyPlayerObjects(player);
-	}
 }
