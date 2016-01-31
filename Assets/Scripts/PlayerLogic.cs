@@ -27,7 +27,7 @@ public class PlayerLogic : NetworkBehaviour {
 
 		Random.seed = 12;
 
-		if (GetComponent<NetworkIdentity>().isServer)
+		if (isServer)
 	    {
 			Debug.Log("LOGGED IN AS SERVER");
 			SetGameState(GameState.Init);
@@ -335,32 +335,43 @@ public class PlayerLogic : NetworkBehaviour {
 			str += playerNumbers[i] + ", ";
 		Debug.Log(str);
 
-		if (isServer)
+		if (Game.currentTurn == number)
 		{
-			if (Game.currentTurn == number)
-			{
-				int score = Mathf.FloorToInt(Game.currentTime);
+			int score = Mathf.FloorToInt(Game.currentTime);
 
-				//if (netId == nid)
-				{
-					Debug.Log("PlayerPress right");
-					Game.currentTurn++;
-					Game.currentTime = 5f;
-					playerNumbers.RemoveAt(0);
-					AddScore(score);
-				}
-
-			}
-			else
-			{
-				//if (netId == nid)
-				{
-					Debug.Log("PlayerPress wrong");
-					AddScore(-5);
-				}
-			}
+			Debug.Log("PlayerPress right");
+			Game.currentTurn++;
+			Game.currentTime = 5f;
+			playerNumbers.RemoveAt(0);
+			AddScore(score);
+		}
+		else
+		{
+			Debug.Log("PlayerPress wrong");
+			AddScore(-5);
 		}
 	}
+
+	/*[Command]
+	void CmdGotCorrect (int val)
+	{
+		RpcGotCorrect(val);
+		GotCorrect(val);
+	}
+
+	[ClientRpc]
+	void RpcGotCorrect (int val)
+	{
+		GotCorrect(val);
+	}
+
+	void GotCorrect (int val)
+	{
+		Game.currentTurn++;
+		Game.currentTime = 5f;
+		playerNumbers.RemoveAt(0);
+		AddScore(val);
+	}*/
 
 	[Command]
 	void CmdNewPlayerJoined ()
