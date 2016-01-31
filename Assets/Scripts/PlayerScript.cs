@@ -1,10 +1,12 @@
 ﻿using UnityEngine;
 using UnityEngine.Networking;
+using DG.Tweening;
 using System.Collections;
 
 [RequireComponent (typeof (LineRenderer))]
 public class PlayerScript : NetworkBehaviour {
 
+    private PlayerLogic _playerlogic;
     private LineRenderer _lineRenderer;
     private SpringJoint _springJoint;
     private MeshRenderer _meshRenderer;
@@ -16,12 +18,21 @@ public class PlayerScript : NetworkBehaviour {
     private Transform _parentObj;
     private SphereCollider _parentsphereCollider;
 
+    private int mPlayerId;
+    private float colorChangeTimer;
+    private float delayDuration;
+    public float minDelayDuration;
+    public float maxDelayDuration;
+    private bool isChangeColor;
+
     public float Hvalue;
     //private int mPlayerId;
     public Vector3 posRange;
 
+
     void Awake()
     {
+        _playerlogic = GetComponent<PlayerLogic>();
         _transform = GetComponent<Transform>();
         SetPosition();
         _sphereCollider = GetComponent<SphereCollider>();
@@ -32,10 +43,11 @@ public class PlayerScript : NetworkBehaviour {
 
         _lineRenderer.SetVertexCount(2);
     }
-
+        
 	// Use this for initialization
 	void Start () 
     {
+        DOTween.Init();
         CenterHub = GameObject.FindGameObjectWithTag("MainGlobe").GetComponent<Transform>();
         UpdateColor();
 	}
@@ -44,6 +56,7 @@ public class PlayerScript : NetworkBehaviour {
 	void Update () 
     {
         SetLine();
+        RandomChangeColor();
 	}
         
     //! Get, Set Parent
@@ -81,10 +94,32 @@ public class PlayerScript : NetworkBehaviour {
     {
         //Vector3 direction = _parentObj.position - _transform.position;
         float angle = Vector3.Angle(Vector3.up, _transform.position);
-        //Quaternion qua = Quaternion.Euler(new Vector3(0f,0f,direction));
-        //float angle = Vector3.Angle(_parentObj.position, _transform.position);
-        //Debug.Log(angle);
         HSBColor newColor = new HSBColor(Mathf.Sin (angle + Mathf.PI / 2 ), 1f, 1f);
         _material.color = newColor.ToColor();
+    }
+
+    public void LerpColor()
+    {
+        HSBColor newColor = new HSBColor(Mathf.Sin (Random.Range(0f, 360f) + Mathf.PI / 2 ), 1f, 1f);
+        _material.DOColor(newColor.ToColor(), delayDuration);
+    }
+
+    void RandomChangeColor()
+    {
+        if (_playerlogic.GetWaitNextRound())
+        {
+            colorChangeTimer += Time.deltaTime;
+            if (colorChangeTimer >= delayDuration)
+            {
+                delayDuration = Random.Range(minDelayDuration, maxDelayDuration);
+                LerpColor();
+                colorChangeTimer = 0f;
+            }
+
+        }
+        else
+        {
+            _material.DOColor(Color.gray, 1f);
+        }
     }
 }

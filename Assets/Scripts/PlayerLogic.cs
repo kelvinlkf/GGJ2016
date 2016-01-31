@@ -394,4 +394,9 @@ public class PlayerLogic : NetworkBehaviour {
 			tag = "PlayerInQueue";
 		}
 	}
+
+    public bool GetWaitNextRound()
+    {
+        return waitForNextRound;
+    }
 }
