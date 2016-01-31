@@ -25,11 +25,6 @@ public class PlayerScript : NetworkBehaviour {
     public float maxDelayDuration;
     private bool isChangeColor;
 
-    public float Hvalue;
-    //private int mPlayerId;
-    public Vector3 posRange;
-
-
     void Awake()
     {
         _playerlogic = GetComponent<PlayerLogic>();
@@ -76,7 +71,7 @@ public class PlayerScript : NetworkBehaviour {
 
     public void SetPosition()
     {
-        _transform.position = Random.insideUnitSphere * Random.Range(6f, 11f);
+        _transform.position = Random.insideUnitSphere * Random.Range(4f, 8f);
     }
 
     public void SetLine()
@@ -102,12 +97,14 @@ public class PlayerScript : NetworkBehaviour {
     {
         HSBColor newColor = new HSBColor(Mathf.Sin (Random.Range(0f, 360f) + Mathf.PI / 2 ), 1f, 1f);
         _material.DOColor(newColor.ToColor(), delayDuration);
+        _lineRenderer.material.DOColor(newColor.ToColor(), delayDuration);
     }
 
     void RandomChangeColor()
     {
-        if (_playerlogic.GetWaitNextRound())
+        if (Game.gameState == GameState.PlayingRound)
         {
+            isChangeColor = false;
             colorChangeTimer += Time.deltaTime;
             if (colorChangeTimer >= delayDuration)
             {
@@ -115,11 +112,15 @@ public class PlayerScript : NetworkBehaviour {
                 LerpColor();
                 colorChangeTimer = 0f;
             }
-
         }
         else
         {
-            _material.DOColor(Color.gray, 1f);
+            if (!isChangeColor)
+            {
+                isChangeColor = true;
+                _material.DOColor(Color.gray, 1f);
+                _lineRenderer.material.DOColor(Color.gray, 1f);
+            }
         }
     }
 }

@@ -6,6 +6,8 @@ public class HUD : MonoBehaviour
 	public static HUD instance;
 	public Text timer;
 	public Text score;
+    public Text round;
+    public Text currentNumber;
 
 	void Awake()
 	{
@@ -33,4 +35,14 @@ public class HUD : MonoBehaviour
 	{
 		score.text = "" + val.ToString("f0");
 	}
+
+    public void UpdateRound (float val)
+    {
+        round.text = "" + val.ToString("f0");
+    }
+
+    public void UpdateCurrentNumber (float val)
+    {
+        currentNumber.text = "" + val.ToString("f0");
+    }
 }
